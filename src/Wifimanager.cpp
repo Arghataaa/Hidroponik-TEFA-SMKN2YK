@@ -1,4 +1,5 @@
-#include "WiFiManagerModule.h"
+
+#include "Wifimanager.h"
 
 WiFiManagerModule::WiFiManagerModule() {
     _connected = false;
@@ -7,27 +8,22 @@ WiFiManagerModule::WiFiManagerModule() {
 bool WiFiManagerModule::begin() {
     Serial.println();
     Serial.println("================================");
-    Serial.println("       WIFI MANAGER Mappi32       ");
+    Serial.println("       WIFI MANAGER MAPPI32     ");
     Serial.println("================================");
 
-    // Nama Access Point konfigurasi
     const char* apName = "Hidroponik-TEFA";
     const char* apPassword = "hidroponik123";
 
-    // Mengatur batas waktu portal konfigurasi
     _wifiManager.setConfigPortalTimeout(180);
-
-    // Mengatur waktu tunggu koneksi
     _wifiManager.setConnectTimeout(20);
 
-    // Mencoba koneksi WiFi tersimpan
-    // Jika gagal, ESP32 membuka portal konfigurasi
     Serial.println("[WiFi] Menghubungkan ke jaringan...");
 
     _connected = _wifiManager.autoConnect(apName, apPassword);
 
     if (_connected) {
         Serial.println("[WiFi] Berhasil terhubung!");
+
         Serial.print("[WiFi] SSID: ");
         Serial.println(WiFi.SSID());
 
