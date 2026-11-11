@@ -8,11 +8,11 @@ void loopMQTT();
 
 void publishSensorData(
     float lux,
-    float temperature,
+    float temperatureAir,
     float humidity,
+    float ec,
     float ph,
-    float tds,
-    float waterLevel
+    float temperatureWater
 );
 
 void setPump(bool status);
