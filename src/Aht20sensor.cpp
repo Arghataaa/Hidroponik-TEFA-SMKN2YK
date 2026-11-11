@@ -1,28 +1,51 @@
 #include "Aht20sensor.h"
+#include <Wire.h>
+#include <Adafruit_AHTX0.h>
 
-// Membuat objek sensor AHTX0 (digunakan untuk AHT20/AHT10)
-Adafruit_AHTX0 aht;
+static Adafruit_AHTX0 aht;
+static bool ahtReady = false;
 
-// Inisialisasi sensor AHT20
-bool initAHT20() {
-    if (!aht.begin()) {
-        Serial.println("Sensor AHT20 tidak terdeteksi! Periksa koneksi kabel.");
-        return false;
-    }
-    Serial.println("Sensor AHT20 berhasil diinisialisasi.");
-    return true;
+bool aht20Begin() {
+  Wire.begin(AHT20_SDA_PIN, AHT20_SCL_PIN);
+
+  Serial.println("Inisialisasi Sensor AHT20...");
+
+  if (!aht.begin(&Wire)) {
+    Serial.println("Gagal menemukan sensor AHT20! Periksa kembali perkabelan.");
+    ahtReady = false;
+    return false;
+  }
+
+  ahtReady = true;
+  Serial.println("Sensor AHT20 berhasil diinisialisasi!");
+  return true;
 }
 
-// Membaca suhu dari sensor AHT20
-float readAHT20Temperature() {
-    sensors_event_t humidity, temp;
-    aht.getEvent(&humidity, &temp);
-    return temp.temperature;
+bool aht20Read(float &temperature, float &humidity) {
+  if (!ahtReady) {
+    return false;
+  }
+
+  sensors_event_t humidityEvent, tempEvent;
+  if (!aht.getEvent(&humidityEvent, &tempEvent)) {
+    return false;
+  }
+
+  temperature = tempEvent.temperature;
+  humidity = humidityEvent.relative_humidity;
+  return true;
 }
 
-// Membaca kelembapan (humidity) dari sensor AHT20
-float readAHT20Humidity() {
-    sensors_event_t humidity, temp;
-    aht.getEvent(&humidity, &temp);
-    return humidity.relative_humidity;
+float aht20GetTemperature() {
+  float t, h;
+  return aht20Read(t, h) ? t : NAN;
+}
+
+float aht20GetHumidity() {
+  float t, h;
+  return aht20Read(t, h) ? h : NAN;
+}
+
+bool aht20IsReady() {
+  return ahtReady;
 }
