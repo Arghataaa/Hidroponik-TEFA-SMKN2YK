@@ -110,6 +110,75 @@ void loopMQTT() {
     }
 }
 
+void publishSensorDataJSON(
+    float lux,
+    float temperatureAir,
+    float humidity,
+    float ec,
+    float ph,
+    float temperatureWater,
+    float rssi
+) {
+    if (!mqtt.connected()) return;
+
+    StaticJsonDocument<1024> doc;
+    doc["device_id"] = "DEV-TSK-01"; // Sesuai Device ID di foto (DEV-TSK-01)
+    doc["timestamp"] = "2026-11-12T00:00:00Z"; // Placeholder timestamp, idealnya pakai NTP
+
+    JsonArray sensors = doc.createNestedArray("sensors");
+
+    // WiFi
+    JsonObject s1 = sensors.createNestedObject();
+    s1["id"] = "TEL-WIFI-001";
+    s1["value"] = rssi;
+    s1["satuan"] = "dBm";
+
+    // pH
+    JsonObject s2 = sensors.createNestedObject();
+    s2["id"] = "SNS-PH-001";
+    s2["value"] = serialized(String(ph, 2));
+    s2["satuan"] = "pH";
+
+    // EC
+    JsonObject s3 = sensors.createNestedObject();
+    s3["id"] = "SNS-EC-002";
+    s3["value"] = serialized(String(ec, 2));
+    s3["satuan"] = "mS/cm";
+
+    // Lux
+    JsonObject s4 = sensors.createNestedObject();
+    s4["id"] = "SNS-BH-003";
+    s4["value"] = serialized(String(lux, 2));
+    s4["satuan"] = "lux";
+
+    // Temp Udara
+    JsonObject s5 = sensors.createNestedObject();
+    s5["id"] = "SNS-AHT-004_temp";
+    s5["value"] = serialized(String(temperatureAir, 2));
+    s5["satuan"] = "°C";
+
+    // Hum Udara
+    JsonObject s6 = sensors.createNestedObject();
+    s6["id"] = "SNS-AHT-004_hum";
+    s6["value"] = serialized(String(humidity, 2));
+    s6["satuan"] = "%";
+
+    // Temp Air
+    JsonObject s7 = sensors.createNestedObject();
+    s7["id"] = "SNS-WT-005";
+    s7["value"] = serialized(String(temperatureWater, 2));
+    s7["satuan"] = "°C";
+
+    char payload[1024];
+    serializeJson(doc, payload);
+
+    if (mqtt.publish(topicSensor, payload)) {
+        Serial.print("Data sensor terkirim (Format Baru): ");
+        Serial.println(payload);
+    }
+}
+
+// Keep old for compatibility or just remove if not used
 void publishSensorData(
     float lux,
     float temperatureAir,
@@ -118,23 +187,7 @@ void publishSensorData(
     float ph,
     float temperatureWater
 ) {
-    if (!mqtt.connected()) return;
-
-    StaticJsonDocument<256> doc;
-    doc["lux"] = lux;
-    doc["temperature_air"] = temperatureAir;
-    doc["humidity"] = humidity;
-    doc["ec"] = ec;
-    doc["ph"] = ph;
-    doc["temperature_water"] = temperatureWater;
-
-    char payload[256];
-    serializeJson(doc, payload);
-
-    if (mqtt.publish(topicSensor, payload)) {
-        Serial.print("Data sensor terkirim: ");
-        Serial.println(payload);
-    }
+    publishSensorDataJSON(lux, temperatureAir, humidity, ec, ph, temperatureWater, -50.0);
 }
 
 void publishAktuatorStatus() {

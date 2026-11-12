@@ -13,10 +13,14 @@
 #include "Deepsleep.h"
 #include "Kekuatansinyal.h"
 
-#define SLEEP_DURATION_SEC 180
+#define SLEEP_DURATION_SEC 10
+
+// Tambahkan untuk keperluan JSON
+#include <ArduinoJson.h>
 
 ECSensor ecSensor;
 WiFiManagerModule wifiModule;
+KekuatanSinyal wifiSignal; // Tambahkan ini
 
 void setup() {
     Serial.begin(SERIAL_BAUD);
@@ -42,14 +46,25 @@ void setup() {
         Serial.println("WiFi Failed");
     }
 
-    // Read Sensors
-    float suhuAir = getTemp();
-    float nilaiPH = readPH(suhuAir);
-    float nilaiEC = ecSensor.read(suhuAir);
+    // Read Sensors (With Dummy Data Override)
+    bool useDummy = true; // Set ke false jika ingin menggunakan sensor asli
+    
+    float suhuAir = useDummy ? 26.80 : getTemp();
+    float nilaiPH = useDummy ? 7.20 : readPH(suhuAir);
+    float nilaiEC = useDummy ? 1.45 : ecSensor.read(suhuAir);
     
     float suhuUdara = 0.0, kelembapan = 0.0;
-    aht20Read(suhuUdara, kelembapan);
-    float lux = readBH1750();
+    if (useDummy) {
+        suhuUdara = 28.50;
+        kelembapan = 65.20;
+    } else {
+        aht20Read(suhuUdara, kelembapan);
+    }
+    
+    float lux = useDummy ? 450.50 : readBH1750();
+    
+    // Gunakan fungsi RSSI asli karena WiFi biasanya harus aktif untuk MQTT
+    int rssi = wifiSignal.getRSSI(); 
 
     // Print Log
     Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
@@ -58,7 +73,8 @@ void setup() {
 
     // Publish Data & Sleep
     if (wifiModule.isConnected()) {
-        publishSensorData(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir);
+        // Panggil fungsi baru yang akan kita buat atau modifikasi publishSensorData
+        publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
         loopMQTT();
         delay(1000);
     }

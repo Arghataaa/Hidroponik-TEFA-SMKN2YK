@@ -14,13 +14,14 @@ extern PubSubClient mqtt;
 void initMQTT();
 void loopMQTT();
 
-void publishSensorData(
+void publishSensorDataJSON(
     float lux,
     float temperatureAir,
     float humidity,
     float ec,
     float ph,
-    float temperatureWater
+    float temperatureWater,
+    float rssi
 );
 
 void publishAktuatorStatus();
