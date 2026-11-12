@@ -5,6 +5,10 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
+// Topik MQTT (Dua Topik Utama: Sensor dan Aktuator)
+extern const char* topicSensor;
+extern const char* topicAktuator;
+
 extern PubSubClient mqtt;
 
 void initMQTT();
@@ -19,6 +23,7 @@ void publishSensorData(
     float temperatureWater
 );
 
+void publishAktuatorStatus();
 void setPump(bool status);
 
 #endif
