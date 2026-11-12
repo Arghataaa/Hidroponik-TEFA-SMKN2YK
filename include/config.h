@@ -22,4 +22,8 @@
 // KONFIGURASI SERIAL
 #define SERIAL_BAUD      115200
 
+#define LCD_ADDR 0x27   // Ubah ke 0x3F jika layar nyala tapi tulisan tidak muncul
+#define LCD_COLS 20
+#define LCD_ROWS 4
+
 #endif // CONFIG_H
