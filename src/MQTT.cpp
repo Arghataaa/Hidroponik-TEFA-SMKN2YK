@@ -9,7 +9,7 @@
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 
-const char* topicSensor = "hidroponik/sensor";
+const char* topicSensor = "tefa/hidroponik/sensor";
 
 void initMQTT() {
     mqtt.setServer(MQTT_SERVER, MQTT_PORT);

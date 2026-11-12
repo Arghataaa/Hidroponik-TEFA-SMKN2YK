@@ -16,7 +16,7 @@
 #define EC_PIN           35  // GPIO 35 (Analog Input EC)
 
 // KONFIGURASI MQTT BROKER
-#define MQTT_SERVER      "192.168.1.100"  // Ganti dengan IP Broker / Domain MQTT kamu
+#define MQTT_SERVER      "test.mosquitto.org"  // Ganti dengan IP Laptop/PC tempat Mosquitto berjalan
 #define MQTT_PORT        1883
 
 // KONFIGURASI SERIAL
