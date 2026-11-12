@@ -1,51 +1,133 @@
 #include "Aht20sensor.h"
+
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
+#include <math.h>
 
-static Adafruit_AHTX0 aht;
-static bool ahtReady = false;
+// Instance sensor AHT20
+static Adafruit_AHTX0 aht20;
 
-bool aht20Begin() {
-  Wire.begin(AHT20_SDA_PIN, AHT20_SCL_PIN);
+// Status sensor
+static bool sensorReady = false;
 
-  Serial.println("Inisialisasi Sensor AHT20...");
+// Cache hasil pembacaan terakhir
+static float lastTemperature = NAN;
+static float lastHumidity = NAN;
 
-  if (!aht.begin(&Wire)) {
-    Serial.println("Gagal menemukan sensor AHT20! Periksa kembali perkabelan.");
-    ahtReady = false;
-    return false;
-  }
 
-  ahtReady = true;
-  Serial.println("Sensor AHT20 berhasil diinisialisasi!");
-  return true;
+// ==========================================
+// INISIALISASI SENSOR
+// ==========================================
+
+bool aht20Begin()
+{
+    sensorReady = false;
+
+    lastTemperature = NAN;
+    lastHumidity = NAN;
+
+    // Inisialisasi komunikasi I2C
+    Wire.begin(AHT20_SDA_PIN, AHT20_SCL_PIN);
+
+    // Inisialisasi sensor AHT20
+    if (!aht20.begin(&Wire, -1, 0x38))
+    {
+        Serial.println("[AHT20] Sensor tidak terdeteksi!");
+
+        return false;
+    }
+
+    sensorReady = true;
+
+    Serial.println("[AHT20] Sensor berhasil diinisialisasi.");
+    Serial.println("[AHT20] Alamat I2C: 0x38");
+
+    return true;
 }
 
-bool aht20Read(float &temperature, float &humidity) {
-  if (!ahtReady) {
-    return false;
-  }
 
-  sensors_event_t humidityEvent, tempEvent;
-  if (!aht.getEvent(&humidityEvent, &tempEvent)) {
-    return false;
-  }
+// ==========================================
+// MEMBACA SUHU DAN KELEMBAPAN
+// ==========================================
 
-  temperature = tempEvent.temperature;
-  humidity = humidityEvent.relative_humidity;
-  return true;
+bool aht20Read(float &temperature, float &humidity)
+{
+    if (!sensorReady)
+    {
+        Serial.println("[AHT20] Sensor belum diinisialisasi.");
+
+        return false;
+    }
+
+    sensors_event_t humidityEvent;
+    sensors_event_t temperatureEvent;
+
+    // Membaca data sensor
+    aht20.getEvent(&humidityEvent, &temperatureEvent);
+
+    float temp = temperatureEvent.temperature;
+    float hum = humidityEvent.relative_humidity;
+
+    // Validasi data
+    if (!isfinite(temp) || !isfinite(hum))
+    {
+        Serial.println("[AHT20] Data pembacaan tidak valid.");
+
+        return false;
+    }
+
+    // Simpan hasil pembacaan
+    lastTemperature = temp;
+    lastHumidity = hum;
+
+    temperature = temp;
+    humidity = hum;
+
+    return true;
 }
 
-float aht20GetTemperature() {
-  float t, h;
-  return aht20Read(t, h) ? t : NAN;
+
+// ==========================================
+// MEMBACA SUHU SAJA
+// ==========================================
+
+float aht20GetTemperature()
+{
+    float temperature;
+    float humidity;
+
+    if (!aht20Read(temperature, humidity))
+    {
+        return NAN;
+    }
+
+    return temperature;
 }
 
-float aht20GetHumidity() {
-  float t, h;
-  return aht20Read(t, h) ? h : NAN;
+
+// ==========================================
+// MEMBACA KELEMBAPAN SAJA
+// ==========================================
+
+float aht20GetHumidity()
+{
+    float temperature;
+    float humidity;
+
+    if (!aht20Read(temperature, humidity))
+    {
+        return NAN;
+    }
+
+    return humidity;
 }
 
-bool aht20IsReady() {
-  return ahtReady;
+
+// ==========================================
+// STATUS SENSOR
+// ==========================================
+
+bool aht20IsReady()
+{
+    return sensorReady;
 }
