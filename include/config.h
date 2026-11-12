@@ -15,6 +15,10 @@
 #define PH_PIN           34  // GPIO 34 (Analog Input pH)
 #define EC_PIN           35  // GPIO 35 (Analog Input EC)
 
+// KONFIGURASI MQTT BROKER
+#define MQTT_SERVER      "192.168.1.100"  // Ganti dengan IP Broker / Domain MQTT kamu
+#define MQTT_PORT        1883
+
 // KONFIGURASI SERIAL
 #define SERIAL_BAUD      115200
 

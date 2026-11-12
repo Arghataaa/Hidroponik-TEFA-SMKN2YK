@@ -1,10 +1,9 @@
-
 #ifndef WIFI_MANAGER_MODULE_H
 #define WIFI_MANAGER_MODULE_H
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiManager.h>
+#include <WiFiManager.h> // Sekarang ini aman memanggil library tzapu
 
 class WiFiManagerModule {
 public:

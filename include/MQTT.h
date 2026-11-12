@@ -2,6 +2,10 @@
 #define MQTT_CLIENT_H
 
 #include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+extern PubSubClient mqtt;
 
 void initMQTT();
 void loopMQTT();

@@ -8,10 +8,10 @@
 #include "pHsensor.h"
 #include "ECsensor.h"
 #include "Pompa.h"
-#include "Wifimanager.h"
+#include "Wifimanagermodule.h"
 #include "MQTT.h"
 #include "Deepsleep.h"
-#include "KekuatanSinyal.h"
+#include "Kekuatansinyal.h"
 
 #define SLEEP_DURATION_SEC 180
 

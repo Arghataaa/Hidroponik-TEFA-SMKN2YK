@@ -19,4 +19,7 @@ private:
   static String rssiKeKategori(int rssi);
 };
 
+// Fungsi global pendukung agar cocok dengan panggilan di main.cpp
+String getWiFiSignalQuality();
+
 #endif

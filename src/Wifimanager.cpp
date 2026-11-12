@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiManager.h>
-#include "Wifimanager.h"
+#include "WiFimanagermodule.h"
 
 WiFiManagerModule::WiFiManagerModule() {
     _connected = false;
@@ -52,7 +51,6 @@ String WiFiManagerModule::getIP() {
     if (isConnected()) {
         return WiFi.localIP().toString();
     }
-
     return "Tidak terhubung";
 }
 
@@ -60,20 +58,17 @@ String WiFiManagerModule::getSSID() {
     if (isConnected()) {
         return WiFi.SSID();
     }
-
     return "Tidak terhubung";
 }
 
 void WiFiManagerModule::disconnect() {
     WiFi.disconnect();
     _connected = false;
-
     Serial.println("[WiFi] Koneksi diputus.");
 }
 
 void WiFiManagerModule::resetSettings() {
     _wifiManager.resetSettings();
     _connected = false;
-
     Serial.println("[WiFi] Konfigurasi WiFi berhasil dihapus.");
 }

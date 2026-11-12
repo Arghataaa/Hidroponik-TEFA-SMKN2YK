@@ -48,3 +48,9 @@ String KekuatanSinyal::rssiKeKategori(int rssi) {
   if (rssi >= -80) return "Lemah";
   return "Sangat Lemah";
 }
+
+// Fungsi global pendukung agar main.cpp bisa langsung memanggil getWiFiSignalQuality()
+String getWiFiSignalQuality() {
+    KekuatanSinyal ks;
+    return ks.getKategori();
+}
