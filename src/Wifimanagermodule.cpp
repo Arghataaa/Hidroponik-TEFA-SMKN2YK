@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include "WiFimanagermodule.h"
+#include "Wifimanagermodule.h"
 
 WiFiManagerModule::WiFiManagerModule() {
     _connected = false;
@@ -9,16 +9,19 @@ WiFiManagerModule::WiFiManagerModule() {
 bool WiFiManagerModule::begin() {
     Serial.println();
     Serial.println("================================");
-    Serial.println("       WIFI MANAGER MAPPI32     ");
+    Serial.println("       WIFI MANAGER ESP32       ");
     Serial.println("================================");
 
     const char* apName = "Hidroponik-TEFA";
     const char* apPassword = "hidroponik123";
 
     _wifiManager.setConfigPortalTimeout(180);
-    _wifiManager.setConnectTimeout(20);
+    _wifiManager.setConnectTimeout(10); // Coba WiFi lama 10 detik, lalu buka AP Hidroponik-TEFA
 
     Serial.println("[WiFi] Menghubungkan ke jaringan...");
+
+    WiFi.mode(WIFI_STA);
+    WiFi.setTxPower(WIFI_POWER_8_5dBm); // Kurangi lonjakan arus WiFi agar tidak brownout/hang
 
     _connected = _wifiManager.autoConnect(apName, apPassword);
 

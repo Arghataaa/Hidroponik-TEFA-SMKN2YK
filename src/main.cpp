@@ -1,7 +1,11 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <ArduinoJson.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #include "config.h"
+#include "Lcd.h"
 #include "Aht20sensor.h"
 #include "Bh1750sensor.h"
 #include "Suhuairsensor.h"
@@ -15,20 +19,21 @@
 
 #define SLEEP_DURATION_SEC 10
 
-// Tambahkan untuk keperluan JSON
-#include <ArduinoJson.h>
-
 ECSensor ecSensor;
 WiFiManagerModule wifiModule;
-KekuatanSinyal wifiSignal; // Tambahkan ini
+KekuatanSinyal wifiSignal;
 
 void setup() {
+    // Mencegah ESP32 restart otomatis akibat drop tegangan saat WiFi menyala
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
     Serial.begin(SERIAL_BAUD);
     delay(500);
     Serial.println("System Wakeup");
 
     // Init I2C & Hardware
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+    initLCD();
     initPump();
     initSuhuAir();
     initPH();
@@ -37,13 +42,23 @@ void setup() {
     initBH1750();
 
     // WiFi & MQTT
-    if (wifiModule.begin()) {
-        Serial.print("WiFi Connected: ");
-        Serial.println(wifiModule.getIP());
-        initMQTT();
-        loopMQTT();
+    bool useWiFi = false; // Ubah ke false jika ingin tes tampilan LCD tanpa WiFi
+
+    if (useWiFi) {
+        tampilkanStatus("Konek WiFi...", "AP: Hidroponik-TEFA");
+        if (wifiModule.begin()) {
+            Serial.print("WiFi Connected: ");
+            Serial.println(wifiModule.getIP());
+            tampilkanStatus("WiFi Terhubung!", wifiModule.getIP());
+            initMQTT();
+            loopMQTT();
+        } else {
+            Serial.println("WiFi Failed");
+            tampilkanStatus("WiFi Gagal!", "Mode Offline...");
+        }
     } else {
-        Serial.println("WiFi Failed");
+        tampilkanStatus("Mode Offline", "Tes Data Dummy");
+        delay(1000);
     }
 
     // Read Sensors (With Dummy Data Override)
@@ -62,9 +77,10 @@ void setup() {
     }
     
     float lux = useDummy ? 450.50 : readBH1750();
-    
-    // Gunakan fungsi RSSI asli karena WiFi biasanya harus aktif untuk MQTT
     int rssi = wifiSignal.getRSSI(); 
+
+    // Tampilkan semua data sensor ke LCD 20x4
+    tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
 
     // Print Log
     Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
@@ -72,8 +88,7 @@ void setup() {
     Serial.printf("Signal: %s | Pump: %s\n", getWiFiSignalQuality().c_str(), getPumpStatus() ? "ON" : "OFF");
 
     // Publish Data & Sleep
-    if (wifiModule.isConnected()) {
-        // Panggil fungsi baru yang akan kita buat atau modifikasi publishSensorData
+    if (useWiFi && wifiModule.isConnected()) {
         publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
         loopMQTT();
         delay(1000);
