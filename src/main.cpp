@@ -23,6 +23,42 @@ ECSensor ecSensor;
 WiFiManagerModule wifiModule;
 KekuatanSinyal wifiSignal;
 
+void scanI2C() {
+    Serial.println("\n========== I2C ADDRESS SCANNER ==========");
+    int count = 0;
+
+    for (uint8_t address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        uint8_t error = Wire.endTransmission();
+
+        if (error == 0) {
+            count++;
+            Serial.print("Alamat ditemukan: 0x");
+            if (address < 16) Serial.print("0");
+            Serial.print(address, HEX);
+            Serial.print(" -> ");
+
+            if (address == 0x23 || address == 0x5C) {
+                Serial.println("BH1750");
+            } else if (address == 0x38) {
+                Serial.println("AHT20");
+            } else if (address == 0x27 || address == 0x3F) {
+                Serial.println("LCD I2C");
+            } else {
+                Serial.println("Unknown Device");
+            }
+        }
+    }
+
+    if (count == 0) {
+        Serial.println("Tidak ada perangkat I2C yang ditemukan!");
+    }
+
+    Serial.print("\nTotal perangkat ditemukan: ");
+    Serial.println(count);
+    Serial.println("=========================================\n");
+}
+
 void setup() {
     // Mencegah ESP32 restart otomatis akibat drop tegangan saat WiFi menyala
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
@@ -33,6 +69,7 @@ void setup() {
 
     // Init I2C & Hardware
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+    scanI2C();
     initLCD();
     initPump();
     initSuhuAir();

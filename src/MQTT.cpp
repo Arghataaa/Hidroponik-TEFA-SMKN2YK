@@ -22,28 +22,24 @@ static String systemMode = "manual";
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (length == 0 || length > 512) return;
 
-    char jsonBuffer[512];
-    memcpy(jsonBuffer, payload, length);
-    jsonBuffer[length] = '\0';
+    char msgBuffer[512];
+    memcpy(msgBuffer, payload, length);
+    msgBuffer[length] = '\0';
 
     Serial.print("Pesan diterima pada topic [");
     Serial.print(topic);
     Serial.print("]: ");
-    Serial.println(jsonBuffer);
-
-    StaticJsonDocument<512> doc;
-    DeserializationError error = deserializeJson(doc, jsonBuffer);
-
-    if (error) {
-        Serial.print("JSON parsing gagal: ");
-        Serial.println(error.f_str());
-        return;
-    }
+    Serial.println(msgBuffer);
 
     String currentTopic = String(topic);
+    if (currentTopic != topicAktuator) return;
 
-    // Mengontrol aktuator atau mode via topic aktuator
-    if (currentTopic == topicAktuator) {
+    // Coba parse sebagai JSON terlebih dahulu
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, msgBuffer);
+
+    if (!error) {
+        // Berhasil parsing JSON
         if (doc.containsKey("mode")) {
             const char* modeStr = doc["mode"];
             if (modeStr != nullptr) {
@@ -54,21 +50,59 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         }
 
         if (doc.containsKey("pump")) {
-            bool pumpCmd = doc["pump"];
             if (systemMode == "manual") {
-                if (pumpCmd) {
-                    pumpOn();
-                } else {
-                    pumpOff();
+                if (doc["pump"].is<bool>()) {
+                    bool pumpCmd = doc["pump"];
+                    if (pumpCmd) pumpOn(); else pumpOff();
+                } else if (doc["pump"].is<int>()) {
+                    int pumpCmd = doc["pump"];
+                    if (pumpCmd != 0) pumpOn(); else pumpOff();
+                } else if (doc["pump"].is<const char*>()) {
+                    String pStr = String(doc["pump"].as<const char*>());
+                    pStr.toLowerCase();
+                    if (pStr == "on" || pStr == "true" || pStr == "1" || pStr == "high") {
+                        pumpOn();
+                    } else if (pStr == "off" || pStr == "false" || pStr == "0" || pStr == "low") {
+                        pumpOff();
+                    }
                 }
             } else {
                 Serial.println("Perintah pompa diabaikan karena mode saat ini automatic.");
             }
         }
+    } else {
+        // Bukan JSON, anggap sebagai Plain Text (misal: "ON", "OFF", "true", dll)
+        String rawMsg = String(msgBuffer);
+        rawMsg.trim();
+        rawMsg.toLowerCase();
 
-        // Kirim balik status aktual aktuator ke topic yang sama
-        publishAktuatorStatus();
+        Serial.print("Menerima plain text: ");
+        Serial.println(rawMsg);
+
+        if (systemMode == "manual") {
+            if (rawMsg == "on" || rawMsg == "true" || rawMsg == "1" || rawMsg == "high") {
+                pumpOn();
+                Serial.println("Pompa dinyalakan via plain text.");
+            } else if (rawMsg == "off" || rawMsg == "false" || rawMsg == "0" || rawMsg == "low") {
+                pumpOff();
+                Serial.println("Pompa dimatikan via plain text.");
+            } else {
+                Serial.println("Perintah plain text tidak dikenal.");
+            }
+        } else {
+            // Jika pesan berupa perintah ubah mode via plain text
+            if (rawMsg == "manual" || rawMsg == "automatic" || rawMsg == "auto") {
+                systemMode = (rawMsg == "auto") ? "automatic" : rawMsg;
+                Serial.print("Mode diubah via plain text ke: ");
+                Serial.println(systemMode);
+            } else {
+                Serial.println("Perintah pompa diabaikan karena mode saat ini automatic.");
+            }
+        }
     }
+
+    // Kirim balik status aktual aktuator ke topic yang sama
+    publishAktuatorStatus();
 }
 
 void initMQTT() {
