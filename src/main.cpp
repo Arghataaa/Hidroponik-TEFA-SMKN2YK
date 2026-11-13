@@ -79,7 +79,7 @@ void setup() {
     initBH1750();
 
     // WiFi & MQTT
-    bool useWiFi = false; // Ubah ke false jika ingin tes tampilan LCD tanpa WiFi
+    bool useWiFi = true; // Ubah ke false jika ingin tes tampilan LCD tanpa WiFi
 
     if (useWiFi) {
         tampilkanStatus("Konek WiFi...", "AP: Hidroponik-TEFA");
