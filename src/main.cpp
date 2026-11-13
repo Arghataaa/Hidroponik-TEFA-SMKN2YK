@@ -140,5 +140,5 @@ void loop() {
         }
     }
 
-    delay(2000); // Interval pembaruan tampilan dan pembacaan
+    delay(10000); // Interval pembaruan tampilan dan pembacaan
 }
