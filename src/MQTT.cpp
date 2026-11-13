@@ -118,6 +118,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 void initMQTT() {
+    mqtt.setBufferSize(1024); // Perbesar batas paket MQTT dari 256 ke 1024 byte
     mqtt.setServer(MQTT_SERVER, MQTT_PORT);
     mqtt.setCallback(mqttCallback);
 
@@ -184,6 +185,8 @@ void publishSensorDataJSON(
     if (mqtt.publish(topicSensor, payload)) {
         Serial.print("Data sensor terkirim (Simple Format): ");
         Serial.println(payload);
+    } else {
+        Serial.println("GAGAL mengirim data sensor!");
     }
 }
 
