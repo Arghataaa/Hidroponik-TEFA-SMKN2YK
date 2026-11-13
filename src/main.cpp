@@ -65,7 +65,7 @@ void setup() {
 
     Serial.begin(SERIAL_BAUD);
     delay(500);
-    Serial.println("System Wakeup");
+    Serial.println("System Booting...");
 
     // Init I2C & Hardware
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
@@ -79,7 +79,7 @@ void setup() {
     initBH1750();
 
     // WiFi & MQTT
-    bool useWiFi = true; // Ubah ke false jika ingin tes tampilan LCD tanpa WiFi
+    bool useWiFi = true; 
 
     if (useWiFi) {
         tampilkanStatus("Konek WiFi...", "AP: Hidroponik-TEFA");
@@ -88,18 +88,24 @@ void setup() {
             Serial.println(wifiModule.getIP());
             tampilkanStatus("WiFi Terhubung!", wifiModule.getIP());
             initMQTT();
-            loopMQTT();
+            delay(1500);
         } else {
             Serial.println("WiFi Failed");
             tampilkanStatus("WiFi Gagal!", "Mode Offline...");
+            delay(1500);
         }
     } else {
-        tampilkanStatus("Mode Offline", "Tes Data Dummy");
-        delay(1000);
+        tampilkanStatus("Mode Offline", "Tes Tanpa WiFi");
+        delay(1500);
     }
+}
 
-    // Read Sensors (With Dummy Data Override)
-    bool useDummy = true; // Set ke false jika ingin menggunakan sensor asli
+void loop() {
+    // Tangani koneksi MQTT / perintah masuk secara realtime
+    loopMQTT();
+
+    // Baca Sensor (Ganti useDummy ke false jika menggunakan sensor fisik asli)
+    bool useDummy = true; 
     
     float suhuAir = useDummy ? 26.80 : getTemp();
     float nilaiPH = useDummy ? 7.20 : readPH(suhuAir);
@@ -116,37 +122,22 @@ void setup() {
     float lux = useDummy ? 450.50 : readBH1750();
     int rssi = wifiSignal.getRSSI(); 
 
-    // Tampilkan semua data sensor ke LCD 20x4
+    // Tampilkan semua data sensor ke LCD 20x4 secara stabil
     tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
 
-    // Print Log
+    // Print Log Serial
     Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
     Serial.printf("Temp Udara: %.2f C | Hum: %.2f %% | Lux: %.2f\n", suhuUdara, kelembapan, lux);
     Serial.printf("Signal: %s | Pump: %s\n", getWiFiSignalQuality().c_str(), getPumpStatus() ? "ON" : "OFF");
 
-    // Publish Data & Sleep
-    if (useWiFi) {
-        // Tunggu hingga MQTT benar-benar terhubung (maksimal 5 detik)
-        unsigned long startWait = millis();
-        while (!mqtt.connected() && (millis() - startWait < 5000)) {
-            loopMQTT();
-            delay(100);
-        }
-
-        if (mqtt.connected()) {
+    // Publish Data Sensor berkala (misal tiap 5 detik)
+    static unsigned long lastPublish = 0;
+    if (millis() - lastPublish > 5000) {
+        lastPublish = millis();
+        if (wifiModule.isConnected()) {
             publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
-            loopMQTT();
-            delay(2000); // Beri waktu agar paket MQTT benar-benar terkirim ke broker
-        } else {
-            Serial.println("Gagal publish sensor: MQTT belum terhubung!");
         }
     }
 
-    Serial.println("Entering Deep Sleep...");
-    Serial.flush();
-    startDeepSleep(SLEEP_DURATION_SEC);
-}
-
-void loop() {
-    // Empty (handled in setup + deep sleep)
+    delay(2000); // Interval pembaruan tampilan dan pembacaan
 }
