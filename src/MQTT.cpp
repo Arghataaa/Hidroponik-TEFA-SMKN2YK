@@ -17,6 +17,7 @@ const char* topicAktuator = "tefa/hidroponik/aktuator";
 
 // State Sistem (Mode & Konfigurasi)
 static String systemMode = "manual";
+unsigned long publishInterval = 60000; // Default 1 menit (ms)
 
 // Callback MQTT untuk menerima perintah dari aplikasi/web pada topic aktuator
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -47,6 +48,17 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
                 Serial.print("Mode diubah ke: ");
                 Serial.println(systemMode);
             }
+        }
+
+        // Pengaturan Interval Publish (Detik atau Menit) dari platform
+        if (doc.containsKey("interval_detik")) {
+            publishInterval = (unsigned long)doc["interval_detik"] * 1000;
+            Serial.print("Interval kirim diubah ke (detik): ");
+            Serial.println(doc["interval_detik"].as<int>());
+        } else if (doc.containsKey("interval_menit")) {
+            publishInterval = (unsigned long)doc["interval_menit"] * 60000;
+            Serial.print("Interval kirim diubah ke (menit): ");
+            Serial.println(doc["interval_menit"].as<int>());
         }
 
         if (doc.containsKey("pump")) {
@@ -193,8 +205,8 @@ void publishAktuatorStatus() {
     StaticJsonDocument<256> doc;
     doc["pump"] = getPumpStatus();
     doc["mode"] = systemMode;
+    doc["interval_detik"] = publishInterval / 1000;
     doc["device"] = "ESP32";
-    doc["connection"] = "connected";
 
     char payload[256];
     serializeJson(doc, payload);

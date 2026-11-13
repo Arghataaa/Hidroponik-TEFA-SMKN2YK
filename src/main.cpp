@@ -22,6 +22,7 @@
 ECSensor ecSensor;
 WiFiManagerModule wifiModule;
 KekuatanSinyal wifiSignal;
+extern unsigned long publishInterval;
 
 void scanI2C() {
     Serial.println("\n========== I2C ADDRESS SCANNER ==========");
@@ -130,9 +131,9 @@ void loop() {
     Serial.printf("Temp Udara: %.2f C | Hum: %.2f %% | Lux: %.2f\n", suhuUdara, kelembapan, lux);
     Serial.printf("Signal: %s | Pump: %s\n", getWiFiSignalQuality().c_str(), getPumpStatus() ? "ON" : "OFF");
 
-    // Publish Data Sensor berkala (misal tiap 5 detik)
+    // Publish Data Sensor berkala sesuai interval dari platform
     static unsigned long lastPublish = 0;
-    if (millis() - lastPublish > 5000) {
+    if (millis() - lastPublish > publishInterval) {
         lastPublish = millis();
         if (wifiModule.isConnected()) {
             publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
