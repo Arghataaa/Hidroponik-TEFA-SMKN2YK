@@ -17,7 +17,7 @@ const char* topicAktuator = "tefa/hidroponik/aktuator";
 
 // State Sistem (Mode & Konfigurasi)
 static String systemMode = "manual";
-unsigned long publishInterval = 60000; // Default 1 menit (ms)
+unsigned long publishInterval = 10000; // Default 10 detik (ms)
 
 // Callback MQTT untuk menerima perintah dari aplikasi/web pada topic aktuator
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
