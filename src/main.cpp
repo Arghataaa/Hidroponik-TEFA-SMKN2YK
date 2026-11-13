@@ -125,10 +125,21 @@ void setup() {
     Serial.printf("Signal: %s | Pump: %s\n", getWiFiSignalQuality().c_str(), getPumpStatus() ? "ON" : "OFF");
 
     // Publish Data & Sleep
-    if (useWiFi && wifiModule.isConnected()) {
-        publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
-        loopMQTT();
-        delay(1000);
+    if (useWiFi) {
+        // Tunggu hingga MQTT benar-benar terhubung (maksimal 5 detik)
+        unsigned long startWait = millis();
+        while (!mqtt.connected() && (millis() - startWait < 5000)) {
+            loopMQTT();
+            delay(100);
+        }
+
+        if (mqtt.connected()) {
+            publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
+            loopMQTT();
+            delay(2000); // Beri waktu agar paket MQTT benar-benar terkirim ke broker
+        } else {
+            Serial.println("Gagal publish sensor: MQTT belum terhubung!");
+        }
     }
 
     Serial.println("Entering Deep Sleep...");
