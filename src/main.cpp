@@ -17,12 +17,12 @@
 #include "Deepsleep.h"
 #include "Kekuatansinyal.h"
 
-#define SLEEP_DURATION_SEC 10
+// Deep Sleep dinonaktifkan sesuai arsitektur operasional baru.
 
 ECSensor ecSensor;
 WiFiManagerModule wifiModule;
 KekuatanSinyal wifiSignal;
-extern unsigned long publishInterval;
+extern unsigned long sensor_interval_minutes;
 
 void scanI2C() {
     Serial.println("\n========== I2C ADDRESS SCANNER ==========");
@@ -68,7 +68,7 @@ void setup() {
     delay(500);
     Serial.println("System Booting...");
 
-    // Init I2C & Hardware
+    // Init I2C & Hardware (GPIO pins preserved as configured)
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     scanI2C();
     initLCD();
@@ -121,7 +121,7 @@ void loop() {
     }
     
     float lux = useDummy ? 450.50 : readBH1750();
-    int rssi = wifiSignal.getRSSI(); 
+    wifiSignal.getRSSI();
 
     // Tampilkan semua data sensor ke LCD 20x4 secara stabil
     tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
@@ -129,16 +129,25 @@ void loop() {
     // Print Log Serial
     Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
     Serial.printf("Temp Udara: %.2f C | Hum: %.2f %% | Lux: %.2f\n", suhuUdara, kelembapan, lux);
-    Serial.printf("Signal: %s | Pump: %s\n", getWiFiSignalQuality().c_str(), getPumpStatus() ? "ON" : "OFF");
+    Serial.printf("Signal: %s | Pump Big: %s | A: %s | B: %s | Up: %s | Down: %s\n",
+        getWiFiSignalQuality().c_str(),
+        getPumpBigStatus()  ? "ON" : "OFF",
+        getPumpAStatus()    ? "ON" : "OFF",
+        getPumpBStatus()    ? "ON" : "OFF",
+        getPumpUpStatus()   ? "ON" : "OFF",
+        getPumpDownStatus() ? "ON" : "OFF");
 
-    // Publish Data Sensor berkala sesuai interval dari platform
-    static unsigned long lastPublish = 0;
-    if (millis() - lastPublish > publishInterval) {
-        lastPublish = millis();
+    // Publish Data Sensor berkala ke topic tefa/hidroponik/sensor
+    // Penjadwalan sensor non-blocking dalam satuan menit.
+    static unsigned long lastSensorPublish = 0;
+    const unsigned long intervalMs = sensor_interval_minutes * 60000UL;
+    if (lastSensorPublish == 0 || millis() - lastSensorPublish >= intervalMs) {
+        lastSensorPublish = millis();
         if (wifiModule.isConnected()) {
-            publishSensorDataJSON(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir, (float)rssi);
+            publishSensorData(lux, suhuUdara, kelembapan, nilaiEC, nilaiPH, suhuAir);
         }
     }
 
-    delay(10000); // Interval pembaruan tampilan dan pembacaan
+    // loop tetap responsif terhadap MQTT; tidak ada Deep Sleep.
+    delay(10);
 }
