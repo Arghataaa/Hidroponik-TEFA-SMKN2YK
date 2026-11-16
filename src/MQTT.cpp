@@ -39,7 +39,7 @@ static bool parsePumpValue(JsonVariant value) {
 void publishStatus(const char* message) {
     if (!mqtt.connected()) return;
 
-    StaticJsonDocument<512> doc;
+    DynamicJsonDocument doc(512);
     doc["device_id"] = "DEV-TSK-01";
     doc["status_message"] = message;
     doc["active_interval_minutes"] = sensor_interval_minutes;
@@ -51,9 +51,10 @@ void publishStatus(const char* message) {
     pumps["pump_down"] = getPumpDownStatus() ? "ON" : "OFF";
     pumps["pump_big"] = getPumpBigStatus() ? "ON" : "OFF";
 
-    char payload[512];
-    serializeJson(doc, payload, sizeof(payload));
-    if (mqtt.publish(topicStatus, payload)) {
+    String payload;
+    payload.reserve(512);
+    serializeJson(doc, payload);
+    if (mqtt.publish(topicStatus, payload.c_str())) {
         Serial.print("Status terkirim ke [");
         Serial.print(topicStatus);
         Serial.print("]: ");
@@ -67,16 +68,17 @@ void publishStatus(const char* message) {
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (String(topic) != topicControl || length == 0 || length > 1024) return;
 
-    char buffer[1025];
-    memcpy(buffer, payload, length);
-    buffer[length] = '\0';
+    // Gunakan heap untuk payload besar agar tidak menghabiskan stack loopTask.
+    String buffer;
+    buffer.reserve(length + 1);
+    buffer.concat(reinterpret_cast<const char*>(payload), length);
 
     Serial.print("Control diterima [");
     Serial.print(topic);
     Serial.print("]: ");
     Serial.println(buffer);
 
-    StaticJsonDocument<1024> doc;
+    DynamicJsonDocument doc(1024);
     DeserializationError err = deserializeJson(doc, buffer);
     if (err) {
         Serial.println("Control diabaikan: JSON tidak valid.");
@@ -184,7 +186,7 @@ void publishSensorDataJSON(float lux, float temperatureAir, float humidity,
                            float ec, float ph, float temperatureWater, float rssi) {
     if (!mqtt.connected()) return;
 
-    StaticJsonDocument<1536> doc;
+    DynamicJsonDocument doc(1536);
     doc["device_id"] = "DEV-TSK-01";
     doc["timestamp"] = "2026-11-09T04:15:30Z";
     JsonArray sensors = doc.createNestedArray("sensors");
@@ -233,9 +235,10 @@ void publishSensorDataJSON(float lux, float temperatureAir, float humidity,
     s["value"] = (int)rssi;
     s["satuan"] = "dBm";
 
-    char payload[1536];
-    serializeJson(doc, payload, sizeof(payload));
-    if (mqtt.publish(topicSensor, payload)) {
+    String payload;
+    payload.reserve(1536);
+    serializeJson(doc, payload);
+    if (mqtt.publish(topicSensor, payload.c_str())) {
         Serial.print("Data sensor terkirim ke [");
         Serial.print(topicSensor);
         Serial.print("]: ");
