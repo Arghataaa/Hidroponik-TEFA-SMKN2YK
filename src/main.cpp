@@ -24,6 +24,10 @@ WiFiManagerModule wifiModule;
 KekuatanSinyal wifiSignal;
 extern unsigned long sensor_interval_minutes;
 
+// Mode dummy aktif hanya sebagai fallback untuk sensor yang gagal terdeteksi/dibaca.
+static bool aht20Available = false;
+static bool bh1750Available = false;
+
 void scanI2C() {
     Serial.println("\n========== I2C ADDRESS SCANNER ==========");
     int count = 0;
@@ -76,8 +80,8 @@ void setup() {
     initSuhuAir();
     initPH();
     ecSensor.begin();
-    aht20Begin();
-    initBH1750();
+    aht20Available = aht20Begin();
+    bh1750Available = initBH1750();
 
     // WiFi & MQTT
     bool useWiFi = true; 
@@ -105,22 +109,27 @@ void loop() {
     // Tangani koneksi MQTT / perintah masuk secara realtime
     loopMQTT();
 
-    // Baca Sensor (Ganti useDummy ke false jika menggunakan sensor fisik asli)
-    bool useDummy = true; 
-    
-    float suhuAir = useDummy ? 26.80 : getTemp();
-    float nilaiPH = useDummy ? 7.20 : readPH(suhuAir);
-    float nilaiEC = useDummy ? 1.45 : ecSensor.read(suhuAir);
-    
-    float suhuUdara = 0.0, kelembapan = 0.0;
-    if (useDummy) {
+    // Sensor fisik digunakan otomatis jika terdeteksi; dummy hanya fallback per sensor.
+    float suhuAir = getTemp();
+    if (!isfinite(suhuAir) || suhuAir < -55.0 || suhuAir > 125.0) {
+        suhuAir = 26.80;
+    }
+
+    float nilaiPH = readPH(suhuAir);
+    if (!isfinite(nilaiPH)) nilaiPH = 7.20;
+
+    float nilaiEC = ecSensor.read(suhuAir);
+    if (!isfinite(nilaiEC) || nilaiEC < 0.0) nilaiEC = 1.45;
+
+    float suhuUdara = 28.50;
+    float kelembapan = 65.20;
+    if (aht20Available && !aht20Read(suhuUdara, kelembapan)) {
         suhuUdara = 28.50;
         kelembapan = 65.20;
-    } else {
-        aht20Read(suhuUdara, kelembapan);
     }
-    
-    float lux = useDummy ? 450.50 : readBH1750();
+
+    float lux = bh1750Available ? readBH1750() : 450.50;
+    if (!isfinite(lux) || lux < 0.0) lux = 450.50;
     wifiSignal.getRSSI();
 
     // Tampilkan semua data sensor ke LCD 20x4 secara stabil
