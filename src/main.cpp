@@ -135,16 +135,23 @@ void loop() {
     // Tampilkan semua data sensor ke LCD 20x4 secara stabil
     tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
 
-    // Print Log Serial
-    Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
-    Serial.printf("Temp Udara: %.2f C | Hum: %.2f %% | Lux: %.2f\n", suhuUdara, kelembapan, lux);
-    Serial.printf("Signal: %s | Pump Big: %s | A: %s | B: %s | Up: %s | Down: %s\n",
-        getWiFiSignalQuality().c_str(),
-        getPumpBigStatus()  ? "ON" : "OFF",
-        getPumpAStatus()    ? "ON" : "OFF",
-        getPumpBStatus()    ? "ON" : "OFF",
-        getPumpUpStatus()   ? "ON" : "OFF",
-        getPumpDownStatus() ? "ON" : "OFF");
+    // Print log Serial dibatasi agar tidak membanjiri Serial Monitor.
+    // Data sensor tetap dibaca setiap loop, tetapi log hanya dicetak tiap 5 detik.
+    static unsigned long lastSerialLog = 0;
+    const unsigned long serialLogIntervalMs = 5000UL;
+    if (lastSerialLog == 0 || millis() - lastSerialLog >= serialLogIntervalMs) {
+        lastSerialLog = millis();
+
+        Serial.printf("Temp Air: %.2f C | pH: %.2f | EC: %.2f mS/cm\n", suhuAir, nilaiPH, nilaiEC);
+        Serial.printf("Temp Udara: %.2f C | Hum: %.2f %% | Lux: %.2f\n", suhuUdara, kelembapan, lux);
+        Serial.printf("Signal: %s | Pump Big: %s | A: %s | B: %s | Up: %s | Down: %s\n",
+            getWiFiSignalQuality().c_str(),
+            getPumpBigStatus()  ? "ON" : "OFF",
+            getPumpAStatus()    ? "ON" : "OFF",
+            getPumpBStatus()    ? "ON" : "OFF",
+            getPumpUpStatus()   ? "ON" : "OFF",
+            getPumpDownStatus() ? "ON" : "OFF");
+    }
 
     // Publish Data Sensor berkala ke topic tefa/hidroponik/sensor
     // Penjadwalan sensor non-blocking dalam satuan menit.
