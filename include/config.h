@@ -15,6 +15,18 @@
 #define PH_PIN           34  // GPIO 34 (Analog Input pH)
 #define EC_PIN           35  // GPIO 35 (Analog Input EC)
 
+// === DATA KALIBRASI SENSOR PH & EC ===
+#define PH_NEUTRAL_VOLTAGE  1327.0   // Tegangan mV pada pH 7.0
+#define PH_ACID_VOLTAGE     1865.0   // Tegangan mV pada pH 4.0
+#define EC_KVALUE_LOW       1.01     // Faktor kalibrasi EC 1.413 mS/cm
+#define EC_KVALUE_HIGH      1.05     // Faktor kalibrasi EC 12.88 mS/cm
+
+// === BATAS BAWAH & ATAS NUTRISI HIDROPONIK ===
+#define PH_BATAS_BAWAH      5.5      // Ambang minimum pH larutan
+#define PH_BATAS_ATAS       6.5      // Ambang maksimum pH larutan
+#define EC_BATAS_BAWAH      1.2      // Ambang minimum kepekatan nutrisi (mS/cm)
+#define EC_BATAS_ATAS       2.0      // Ambang maksimum kepekatan nutrisi (mS/cm)
+
 // KONFIGURASI MQTT BROKER
 #define MQTT_SERVER      "broker.emqx.io"  // Ganti dengan IP Laptop/PC tempat Mosquitto berjalan
 #define MQTT_PORT        1883

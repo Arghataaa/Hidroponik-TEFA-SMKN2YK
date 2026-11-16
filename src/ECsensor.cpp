@@ -1,10 +1,10 @@
-#include "ECSensor.h"
+#include "ECsensor.h"
+#include "config.h"
 
 ECSensor::ECSensor(uint8_t pin)
   : _pin(pin), _voltage(0), _ecValue(0), _temperature(25.0) {}
 
 void ECSensor::begin() {
-  // Konfigurasi ADC ESP32
   analogReadResolution(12);
   analogSetPinAttenuation(_pin, ADC_11db);
 
@@ -14,13 +14,26 @@ void ECSensor::begin() {
 
 float ECSensor::read(float temperature) {
   _temperature = temperature;
-  _voltage     = analogReadMilliVolts(_pin);
-  _ecValue     = _ec.readEC(_voltage, _temperature);
+
+  // analogReadMilliVolts() menghasilkan tegangan dalam mV.
+  _voltage = analogReadMilliVolts(_pin);
+
+  // RES2 = 820 dan ECREF = 200, sehingga pembagi = 164.
+  const float rawEC = _voltage / 164.0;
+  const float kValue = (rawEC > 2.5) ? EC_KVALUE_HIGH : EC_KVALUE_LOW;
+
+  float ecValue = rawEC * kValue;
+
+  // Kompensasi suhu ke standar 25.0 °C.
+  ecValue = ecValue / (1.0 + 0.0185 * (temperature - 25.0));
+
+  if (ecValue < 0.0) ecValue = 0.0;
+  _ecValue = ecValue;
   return _ecValue;
 }
 
 void ECSensor::calibrate() {
-  // Membaca perintah 'enterec', 'calec', 'exitec' dari Serial Monitor
+  // Membaca perintah 'enterec', 'calec', 'exitec' dari Serial Monitor.
   _ec.calibration(_voltage, _temperature);
 }
 
