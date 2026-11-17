@@ -137,7 +137,7 @@ void loop() {
     const unsigned long lcdUpdateIntervalMs = 3000UL;
     if (lastLcdUpdate == 0 || millis() - lastLcdUpdate >= lcdUpdateIntervalMs) {
         lastLcdUpdate = millis();
-        tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
+        tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan, lux);
     }
 
     // Print log Serial dibatasi agar tidak membanjiri Serial Monitor.

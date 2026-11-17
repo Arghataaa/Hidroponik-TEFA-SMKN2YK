@@ -10,6 +10,6 @@
 
 void initLCD();
 void tampilkanStatus(String baris1, String baris2);
-void tampilkanSensor(float suhuAir, float ph, float ec, float suhuUdara, float kelembapan);
+void tampilkanSensor(float suhuAir, float ph, float ec, float suhuUdara, float kelembapan, float lux = 0.0);
 
 #endif

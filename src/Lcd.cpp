@@ -25,34 +25,35 @@ void tampilkanStatus(String baris1, String baris2) {
     lcd.print(baris2);
 }
 
-void tampilkanSensor(float suhuAir, float ph, float ec, float suhuUdara, float kelembapan) {
+void tampilkanSensor(float suhuAir, float ph, float ec, float suhuUdara, float kelembapan, float lux) {
     lcd.clear();
 
-    // Baris 0: Judul
+    // Baris 0: pH dan EC
     lcd.setCursor(0, 0);
-    lcd.print("== MONITOR SENSOR ==");
-
-    // Baris 1: pH dan EC
-    lcd.setCursor(0, 1);
     lcd.print("pH: ");
     lcd.print(ph, 1);
-    lcd.setCursor(10, 1);
+    lcd.setCursor(10, 0);
     lcd.print("EC: ");
     lcd.print(ec, 1);
 
-    // Baris 2: Suhu Air
-    lcd.setCursor(0, 2);
-    lcd.print("Suhu Air : ");
+    // Baris 1: Suhu Air
+    lcd.setCursor(0, 1);
+    lcd.print("Suhu Air: ");
     lcd.print(suhuAir, 1);
     lcd.print(" C");
 
-    // Baris 3: Suhu Udara & Kelembapan
-    lcd.setCursor(0, 3);
+    // Baris 2: Suhu Udara & Kelembapan
+    lcd.setCursor(0, 2);
     lcd.print("Udr:");
     lcd.print(suhuUdara, 1);
     lcd.print("C");
-    lcd.setCursor(11, 3);
+    lcd.setCursor(11, 2);
     lcd.print("RH:");
     lcd.print(kelembapan, 0);
     lcd.print("%");
+
+    // Baris 3: Intensitas cahaya
+    lcd.setCursor(0, 3);
+    lcd.print("Lux: ");
+    lcd.print(lux, 1);
 }
