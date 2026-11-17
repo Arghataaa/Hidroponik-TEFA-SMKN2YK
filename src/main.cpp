@@ -109,31 +109,36 @@ void loop() {
     // Tangani koneksi MQTT / perintah masuk secara realtime
     loopMQTT();
 
-    // Sensor fisik digunakan otomatis jika terdeteksi; dummy hanya fallback per sensor.
+    // Tanpa data dummy; jika sensor gagal/tidak terdeteksi, nilai diatur ke 0 atau NAN.
     float suhuAir = getTemp();
     if (!isfinite(suhuAir) || suhuAir < -55.0 || suhuAir > 125.0) {
-        suhuAir = 26.80;
+        suhuAir = 0.0;
     }
 
     float nilaiPH = readPH(suhuAir);
-    if (!isfinite(nilaiPH)) nilaiPH = 7.20;
+    if (!isfinite(nilaiPH)) nilaiPH = 0.0;
 
     float nilaiEC = ecSensor.read(suhuAir);
-    if (!isfinite(nilaiEC) || nilaiEC < 0.0) nilaiEC = 1.45;
+    if (!isfinite(nilaiEC) || nilaiEC < 0.0) nilaiEC = 0.0;
 
-    float suhuUdara = 28.50;
-    float kelembapan = 65.20;
-    if (aht20Available && !aht20Read(suhuUdara, kelembapan)) {
-        suhuUdara = 28.50;
-        kelembapan = 65.20;
+    float suhuUdara = 0.0;
+    float kelembapan = 0.0;
+    if (aht20Available) {
+        aht20Read(suhuUdara, kelembapan);
     }
 
-    float lux = bh1750Available ? readBH1750() : 450.50;
-    if (!isfinite(lux) || lux < 0.0) lux = 450.50;
+    float lux = bh1750Available ? readBH1750() : 0.0;
+    if (!isfinite(lux) || lux < 0.0) lux = 0.0;
     wifiSignal.getRSSI();
 
-    // Tampilkan semua data sensor ke LCD 20x4 secara stabil
-    tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
+    // LCD tidak diperbarui setiap loop karena tampilkanSensor() memanggil lcd.clear().
+    // Pembaruan berkala mencegah layar berkedip.
+    static unsigned long lastLcdUpdate = 0;
+    const unsigned long lcdUpdateIntervalMs = 3000UL;
+    if (lastLcdUpdate == 0 || millis() - lastLcdUpdate >= lcdUpdateIntervalMs) {
+        lastLcdUpdate = millis();
+        tampilkanSensor(suhuAir, nilaiPH, nilaiEC, suhuUdara, kelembapan);
+    }
 
     // Print log Serial dibatasi agar tidak membanjiri Serial Monitor.
     // Data sensor tetap dibaca setiap loop, tetapi log hanya dicetak tiap 5 detik.
