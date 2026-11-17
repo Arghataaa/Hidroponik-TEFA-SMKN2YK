@@ -27,6 +27,17 @@ float readPH(float temperature) {
 
     float phValue = slope * (voltage - 1500.0) / 3.0 + intercept;
 
+    // Koreksi empiris berdasarkan hasil uji buffer:
+    // buffer pH 4 terbaca sekitar 3, pH 7 sekitar 5.8, dan pH 10 sekitar 8.
+    // Interpolasi 3 titik menjaga hasil sesuai data kalibrasi lapangan.
+    if (phValue <= 5.8) {
+        // Titik (3 -> 4) dan (5.8 -> 7)
+        phValue = 4.0 + (phValue - 3.0) * (3.0 / 2.8);
+    } else {
+        // Titik (5.8 -> 7) dan (8 -> 10)
+        phValue = 7.0 + (phValue - 5.8) * (3.0 / 2.2);
+    }
+
     // Batas fisik pH agar probe kering/noise tidak menghasilkan nilai invalid.
     if (phValue < 0.0) phValue = 0.0;
     if (phValue > 14.0) phValue = 14.0;
