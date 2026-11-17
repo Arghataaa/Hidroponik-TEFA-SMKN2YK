@@ -92,6 +92,8 @@ void setup() {
             Serial.print("WiFi Connected: ");
             Serial.println(wifiModule.getIP());
             tampilkanStatus("WiFi Terhubung!", wifiModule.getIP());
+            // NTP dijalankan hanya setelah WiFi berhasil tersambung.
+            sinkronisasiWaktuWIB();
             initMQTT();
             delay(1500);
         } else {

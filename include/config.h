@@ -38,4 +38,9 @@
 #define LCD_COLS 20
 #define LCD_ROWS 4
 
+// Waktu Indonesia Barat (WIB / GMT+7) untuk sinkronisasi NTP pada LCD.
+#define WIB_UTC_OFFSET_SEC  (7 * 60 * 60)
+#define NTP_SERVER_PRIMARY  "pool.ntp.org"
+#define NTP_SERVER_SECONDARY "time.google.com"
+
 #endif // CONFIG_H

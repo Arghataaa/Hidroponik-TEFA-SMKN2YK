@@ -12,4 +12,7 @@ void initLCD();
 void tampilkanStatus(String baris1, String baris2);
 void tampilkanSensor(float suhuAir, float ph, float ec, float suhuUdara, float kelembapan, float lux = 0.0);
 
+// Sinkronisasi waktu WIB melalui NTP setelah WiFi tersambung.
+bool sinkronisasiWaktuWIB();
+
 #endif
