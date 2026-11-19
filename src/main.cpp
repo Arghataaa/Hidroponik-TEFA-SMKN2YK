@@ -19,6 +19,12 @@
 
 // Deep Sleep dinonaktifkan sesuai arsitektur operasional baru.
 
+// Status sinkronisasi NTP disimpan agar dapat dicoba ulang setelah WiFi
+// sempat terputus atau NTP belum siap saat boot.
+static bool waktuSudahTersinkron = false;
+static unsigned long percobaanNtpTerakhir = 0;
+static const unsigned long intervalCobaNtpMs = 10000UL;
+
 ECSensor ecSensor;
 WiFiManagerModule wifiModule;
 KekuatanSinyal wifiSignal;
@@ -92,8 +98,10 @@ void setup() {
             Serial.print("WiFi Connected: ");
             Serial.println(wifiModule.getIP());
             tampilkanStatus("WiFi Terhubung!", wifiModule.getIP());
-            // NTP dijalankan hanya setelah WiFi berhasil tersambung.
-            sinkronisasiWaktuWIB();
+            // NTP dijalankan setelah WiFi berhasil tersambung. Jika timeout,
+            // loop() akan mencoba ulang tanpa perlu reboot perangkat.
+            waktuSudahTersinkron = sinkronisasiWaktuWIB();
+            percobaanNtpTerakhir = millis();
             initMQTT();
             delay(1500);
         } else {
@@ -108,6 +116,14 @@ void setup() {
 }
 
 void loop() {
+    // WiFi bisa tersambung sebelum layanan NTP siap. Coba sinkronisasi ulang
+    // secara berkala agar LCD tidak menetap menampilkan "Waktu belum sinkron".
+    if (!waktuSudahTersinkron && wifiModule.isConnected() &&
+        (percobaanNtpTerakhir == 0 || millis() - percobaanNtpTerakhir >= intervalCobaNtpMs)) {
+        percobaanNtpTerakhir = millis();
+        waktuSudahTersinkron = sinkronisasiWaktuWIB();
+    }
+
     // Tangani koneksi MQTT / perintah masuk secara realtime
     loopMQTT();
 
